@@ -987,7 +987,7 @@ struct tc_fq_pie_xstats {
 	__u32 overlimit;        /* dropped due to lack of space in queue */
 	__u32 ecn_mark;         /* packets marked with ecn*/
 	__u32 new_flow_count;   /* number of time packets
-				 			* created a 'new flow' */
+				   created a 'new flow' */
 	__u32 new_flows_len;	/* count of flows in new list */
 	__u32 old_flows_len;	/* count of flows in old list */
 };
