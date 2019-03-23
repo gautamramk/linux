@@ -146,7 +146,6 @@ retry:
 	}
 
 	ctx->in_tcp_sendpages = false;
-	ctx->sk_write_space(sk);
 
 	return 0;
 }
@@ -228,6 +227,8 @@ static void tls_write_space(struct sock *sk)
 	else
 #endif
 		tls_sw_write_space(sk, ctx);
+
+	ctx->sk_write_space(sk);
 }
 
 static void tls_ctx_free(struct tls_context *ctx)
@@ -468,24 +469,29 @@ static int do_tls_setsockopt_conf(struct sock *sk, char __user *optval,
 
 	switch (crypto_info->cipher_type) {
 	case TLS_CIPHER_AES_GCM_128:
+		optsize = sizeof(struct tls12_crypto_info_aes_gcm_128);
+		break;
 	case TLS_CIPHER_AES_GCM_256: {
-		optsize = crypto_info->cipher_type == TLS_CIPHER_AES_GCM_128 ?
-			sizeof(struct tls12_crypto_info_aes_gcm_128) :
-			sizeof(struct tls12_crypto_info_aes_gcm_256);
-		if (optlen != optsize) {
-			rc = -EINVAL;
-			goto err_crypto_info;
-		}
-		rc = copy_from_user(crypto_info + 1, optval + sizeof(*crypto_info),
-				    optlen - sizeof(*crypto_info));
-		if (rc) {
-			rc = -EFAULT;
-			goto err_crypto_info;
-		}
+		optsize = sizeof(struct tls12_crypto_info_aes_gcm_256);
 		break;
 	}
+	case TLS_CIPHER_AES_CCM_128:
+		optsize = sizeof(struct tls12_crypto_info_aes_ccm_128);
+		break;
 	default:
 		rc = -EINVAL;
+		goto err_crypto_info;
+	}
+
+	if (optlen != optsize) {
+		rc = -EINVAL;
+		goto err_crypto_info;
+	}
+
+	rc = copy_from_user(crypto_info + 1, optval + sizeof(*crypto_info),
+			    optlen - sizeof(*crypto_info));
+	if (rc) {
+		rc = -EFAULT;
 		goto err_crypto_info;
 	}
 

@@ -808,20 +808,17 @@ static const struct genl_ops fou_nl_ops[] = {
 	{
 		.cmd = FOU_CMD_ADD,
 		.doit = fou_nl_cmd_add_port,
-		.policy = fou_nl_policy,
 		.flags = GENL_ADMIN_PERM,
 	},
 	{
 		.cmd = FOU_CMD_DEL,
 		.doit = fou_nl_cmd_rm_port,
-		.policy = fou_nl_policy,
 		.flags = GENL_ADMIN_PERM,
 	},
 	{
 		.cmd = FOU_CMD_GET,
 		.doit = fou_nl_cmd_get_port,
 		.dumpit = fou_nl_dump,
-		.policy = fou_nl_policy,
 	},
 };
 
@@ -830,6 +827,7 @@ static struct genl_family fou_nl_family __ro_after_init = {
 	.name		= FOU_GENL_NAME,
 	.version	= FOU_GENL_VERSION,
 	.maxattr	= FOU_ATTR_MAX,
+	.policy = fou_nl_policy,
 	.netnsok	= true,
 	.module		= THIS_MODULE,
 	.ops		= fou_nl_ops,
@@ -1024,7 +1022,7 @@ static int gue_err(struct sk_buff *skb, u32 info)
 	int ret;
 
 	len = sizeof(struct udphdr) + sizeof(struct guehdr);
-	if (!pskb_may_pull(skb, len))
+	if (!pskb_may_pull(skb, transport_offset + len))
 		return -EINVAL;
 
 	guehdr = (struct guehdr *)&udp_hdr(skb)[1];
@@ -1059,7 +1057,7 @@ static int gue_err(struct sk_buff *skb, u32 info)
 
 	optlen = guehdr->hlen << 2;
 
-	if (!pskb_may_pull(skb, len + optlen))
+	if (!pskb_may_pull(skb, transport_offset + len + optlen))
 		return -EINVAL;
 
 	guehdr = (struct guehdr *)&udp_hdr(skb)[1];
